@@ -1,0 +1,866 @@
+---
+title: "Chocolate Bar Rating Class Project"
+subtitle: "HarvardX Data Science Capstone"
+author: "Joseph Cayetano"
+date: '2022-10-10'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1. Introduction/Overview/Executive Summary
+There’s no doubt that Americans love chocolate. In fact, Americans consume about 2.8 billion pounds of chocolate each year. To put into perspective, the average American eats about 12 pounds of chocolate each year. That’s equivalent to 1 pound per month, or the amount in 9 Hershey’s chocolate bars. However, people from different countries prefer different kinds of chocolate and not all chocolate bars are created equal.
+
+## 1.1 Dataset
+For this project, we will be using the Chocolate Bar Ratings dataset from Kaggle to create visualizations of the different variables of the chocolate bars and develop predictive machine learning models. The dataset contains expert ratings of about 1,700 chocolate bars, along with information on what country they came from, the amount of cocoa they have, the type of chocolate bean used and where the beans were grown. 
+
+The ratings in the dataset were collected by Brady Brelinksi, who is one of the founders of the Manhattan Chocolate Society. To see more of Brelinksi’s work regarding how chocolates are made, visit FlavorsOfCacao.com.
+
+## 1.2 Goal of the Project
+The goal of this project is to develop the best machine learning model that accurately predicts the Chocolate Bar Rating Class. We will train and test 3 different predictive models. The model that gets the highest accuracy score will be considered the best. 
+
+The rating class for all the chocolate bars in the dataset is influenced by the Flavors of Cacao Rating System.
+
+Rating Scale:
+
+&nbsp;&nbsp;&nbsp;5 = Elite (Transcending beyond the ordinary limits)
+
+&nbsp;&nbsp;&nbsp;4 = Premium (Superior flavor development, character, and style)
+
+&nbsp;&nbsp;&nbsp;3 = Satisfactory(3.0) to praiseworthy(3.75) (well made with special qualities)
+
+&nbsp;&nbsp;&nbsp;2 = Disappointing (Passable but contains at least one significant flaw)
+
+&nbsp;&nbsp;&nbsp;1 = Unpleasant (mostly unpalatable)
+
+## 1.3 Key Steps Performed
+We will be executing these following steps to achieve the goal of the project:
+
+Step 1: Download the Chocolate Bar Ratings dataset.
+	
+Step 2: Clean, explore, and create visualizations of the dataset. We will create visualizations of the different variables of the chocolate bars. Doing this, we will be able to determine the features that we will use for our machine learning models. 
+
+Step 3: Split the dataset into training and testing sets. The training set will make up about 80 percent of the data, while the testing set will make up about 20 percent of the data.
+
+Step 4: Build and train the machine learning models. Then, evaluate the accuracy of their predictions by using the test set.
+
+Step 5: Discuss the results and provide a conclusion.
+
+# 2. Methods/Analysis
+We will begin the analysis by downloading the Chocolate Bar Ratings dataset. After that, we will remove non printable characters from the data to avoid potential issues that may arise when calculating the count for each variable.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# We're going to install all the required libraries for this project.
+# The if statements tell us that the packages won't install if you have them already.
+# Note: this process could take a couple of minutes.
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("knitr", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("viridis", repos = "http://cran.us.r-project.org")
+
+# Adding the required libraries.
+library(tidyverse)
+library(caret)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(viridis)
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Defining the URL for the Chocolate Bar Ratings dataset.
+choco_data_raw <- "https://raw.githubusercontent.com/josephcayetano/HarvardX-DataScience-CYOP/main/flavors_of_cacao.csv"
+
+# Downloading the Chocolate Bar Ratings dataset and removing non printable characters.
+choco <- read_csv(gsub("[^[:print:]]","",choco_data_raw),
+                           na = c(""," ","NA"))
+```
+
+## 2.1 Data Exploration
+
+To get familiar with the dataset, We will pull a few rows of it as seen below. The dataset has 9 columns or variables, and they are:
+
+```{r echo=FALSE}
+# Pulling a few rows of the dataset.
+head(choco) %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position","scale_down"))
+
+```
+&nbsp;&nbsp;&nbsp;Company (Maker-if known) – The name of the company that produces the chocolate bar.
+
+&nbsp;&nbsp;&nbsp;Specific Bean Origin or Bar Name – The specific place of where the bar came from or the bar’s name.
+
+&nbsp;&nbsp;&nbsp;REF – The higher the value, the more recent it was entered in the database.
+
+&nbsp;&nbsp;&nbsp;Review Date – The publication date of the review.
+
+&nbsp;&nbsp;&nbsp;Cocoa Percent – The percentage of cocoa of the bar.
+
+&nbsp;&nbsp;&nbsp;Company Location – The country where the company is in.
+
+&nbsp;&nbsp;&nbsp;Rating – The expert rating for the bar (Scale of 1 – 5, with 5 being the best).
+
+&nbsp;&nbsp;&nbsp;Bean Type – The kind of bean used, if provided.
+
+&nbsp;&nbsp;&nbsp;Broad Bean Origin – The broad place of where the bean came from. 
+
+The dataset contains 1795 ratings and 9 variables.
+
+```{r echo=FALSE}
+# Displaying the dataset's total number of rows and columns. 
+dim(choco)
+```
+The column names look a bit messy. Let's fix the column names not only to make them more readable, but also to make it easier for us to reference them in the code.
+
+```{r echo=TRUE}
+# Changing column names for consistency.
+colNames <- c("CompanyMaker",
+                  "ChocoName",
+                  "Reference",
+                  "ReviewDate",
+                  "CocoaPercent",
+                  "CompanyLocation",
+                  "Rating",
+                  "BeanType",
+                  "BroadBeanOrigin")
+
+names(choco) <- colNames
+
+# Fixed column names.
+names(choco)
+```
+
+We will remove the extra whitespaces and replace all empty values with NA.
+
+```{r echo=TRUE}
+# Removing extra whitespaces.
+choco <- choco %>% 
+  mutate(across(where(is.character), str_trim))
+
+# Replacing all empty values with NA.
+choco <- choco %>% 
+  mutate_all(na_if, "")
+```
+
+There is a lot of missing values in the data, and they are all from the BeanType and BroadBeanOrigin columns.
+
+```{r echo=FALSE}
+# Counting the number of missing values for each column.
+missVals <- tibble("Column Name" = c("CompanyMaker",
+                                                   "ChocoName",
+                                                   "Reference",
+                                                   "ReviewDate",
+                                                   "CocoaPercent",
+                                                   "CompanyLocation",
+                                                   "Rating",
+                                                   "BeanType",
+                                                   "BroadBeanOrigin"),
+                                 "Num of Missing Values" = c(sum(is.na(choco$CompanyMaker)),
+                                                      sum(is.na(choco$ChocoName)),
+                                                      sum(is.na(choco$Reference)),
+                                                      sum(is.na(choco$ReviewDate)),
+                                                      sum(is.na(choco$CocoaPercent)),
+                                                      sum(is.na(choco$CompanyLocation)),
+                                                      sum(is.na(choco$Rating)),
+                                                      sum(is.na(choco$BeanType)),
+                                                      sum(is.na(choco$BroadBeanOrigin))))
+
+# Displaying the number of missing values for each column.
+missVals
+```
+\newpage
+## 2.2 Data Cleaning
+
+Looking at the values for the CompanyLocation column, we see some inconsistencies in the data. For example, there’s an “Ecuador” and “Eucador”. There’s a “Nicaragua” and “Niacragua”. Also, “Domincan Republic” is misspelled when it should be “Dominican Republic.” 
+
+```{r echo=FALSE}
+# Displaying a list of unique values for the column CompanyLocation.
+uniqueCompanyLocation <- unique(choco$CompanyLocation) %>% sort()
+
+uniqueCompanyLocation
+```
+We will fix all the problematic values in the CompanyLocation column for consistency. 
+
+```{r echo=TRUE}
+# Fixing the inconsistencies in the CompanyLocation column
+choco$CompanyLocation[choco$CompanyLocation == "Domincan Republic"] <- "Dominican Republic"
+choco$CompanyLocation[choco$CompanyLocation == "Eucador"] <- "Ecuador"
+choco$CompanyLocation[choco$CompanyLocation == "Niacragua"] <- "Nicaragua"
+choco$CompanyLocation[choco$CompanyLocation == "Amsterdam"] <- "Netherlands"
+choco$CompanyLocation[choco$CompanyLocation == "St. Lucia"] <- "Saint Lucia"
+choco$CompanyLocation[choco$CompanyLocation == "Sao Tome"] <- "Sao Tome and Principe"
+choco$CompanyLocation[choco$CompanyLocation == "Scotland"] <- "United Kingdom"
+choco$CompanyLocation[choco$CompanyLocation == "U.K."] <- "United Kingdom"
+choco$CompanyLocation[choco$CompanyLocation == "U.S.A."] <- "United States of America"
+choco$CompanyLocation[choco$CompanyLocation == "Wales"] <- "United Kingdom"
+choco$CompanyLocation[choco$CompanyLocation == "Martinique"] <- "France"
+```
+
+There’s also a lot of inconsistent values in the column BroadBeanOrigin. It’s clear that there are some rows with multiple bean origins delimited by ",", "/", "&", or "and". We will only use “|” as the delimiter for the rows with multiple bean origin values to make the data more consistent. 
+
+```{r echo=FALSE}
+# Displaying a list of unique values for the column BroadBeanOrigin.
+uniqueBroadBeanOrigin <- unique(choco$BroadBeanOrigin) %>% sort()
+
+uniqueBroadBeanOrigin
+```
+
+```{r echo=TRUE}
+# Fixing the inconsistencies in the BroadBeanOrigin column.
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Africa, Carribean, C. Am."] <- "Western Africa|Caribbean|Meso-America"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Burma"] <- "Myanmar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Carribean"] <- "Caribbean"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Carribean(DR/Jam/Tri)"] <- "Dominican Republic|Jamaica|Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Central and S. America"] <- "Meso-America|South America"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Colombia, Ecuador"] <- "Colombia|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Congo"] <- "Republic of the Congo"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Cost Rica, Ven"] <- "Costa Rica|Venezuela"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Dom. Rep., Madagascar"] <- "Dominican Republic|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Dominican Rep., Bali"] <- "Dominican Republic|Indonesia"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "DR, Ecuador, Peru"] <- "Dominican Republic|Ecuador|Peru"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ecuador, Costa Rica"] <- "Ecuador|Costa Rica"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ecuador, Mad., PNG"] <- "Ecuador|Madagascar|Papua New Guinea"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ghana & Madagascar"] <- "Ghana|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ghana, Domin. Rep"] <- "Ghana|Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ghana, Panama, Ecuador"] <- "Ghana|Panama|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Gre., PNG, Haw., Haiti, Mad"] <- "Grenada|Papua New Guinea|South Pacific|Haiti|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Guat., D.R., Peru, Mad., PNG"] <- "Guatemala|Dominican Republic|Peru|Madagascar|Papua New Guinea"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Indonesia, Ghana"] <- "Indonesia|Ghana"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Mad., Java, PNG"] <- "Madagascar|Indonesia|Papua New Guinea"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Madagascar & Ecuador"] <- "Madagascar|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru(SMartin,Pangoa,nacional)"] <- "Peru"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Belize"] <- "Peru|Belize"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Dom. Rep"] <- "Peru|Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Ecuador"] <- "Peru|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Ecuador, Venezuela"] <- "Peru|Ecuador|Venezuela"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Mad., Dom. Rep."] <- "Peru|Madagascar|Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Peru, Madagascar"] <- "Peru|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "PNG, Vanuatu, Mad"] <- "Papua New Guinea|Vanuatu|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Trinidad, Ecuador"] <- "Trinidad and Tobago|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ven, Bolivia, D.R."] <- "Venezuela|Bolivia|Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ven, Trinidad, Ecuador"] <- "Venezuela|Trinidad and Tobago|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ven., Indonesia, Ecuad."] <- "Venezuela|Indonesia|Ecuador"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ven., Trinidad, Mad."] <- "Venezuela|Trinidad and Tobago|Madagascar"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Ven.,Ecu.,Peru,Nic."] <- "Venezuela|Ecuador|Peru|Nicaragua"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venez,Africa,Brasil,Peru,Mex"] <- "Venezuela|Western Africa|Brazil|Peru|Mexico"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela, Carribean"] <- "Venezuela|Caribbean"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela, Dom. Rep."] <- "Venezuela|Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela, Ghana"] <- "Venezuela|Ghana"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela, Java"] <- "Venezuela|Indonesia"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela, Trinidad"] <- "Venezuela|Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela/ Ghana"] <- "Venezuela|Ghana"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Domincan Republic"] <- "Dominican Republic"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Hawaii"] <- "South Pacific"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Principe"] <- "Sao Tome and Principe"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Sao Tome"] <- "Sao Tome and Principe"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Sao Tome & Principe"] <- "Sao Tome and Principe"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "St. Lucia"] <- "Saint Lucia"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "South America, Africa"] <- "South America|Western Africa"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Tanzania"] <- "United Republic of Tanzania"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Tobago"] <- "Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Trinidad"] <- "Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Trinidad, Tobago"] <- "Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Trinidad-Tobago"] <- "Trinidad and Tobago"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Venezuela"] <- "Venezuela"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Vietnam"] <- "Vietnam"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "Martinique"] <- "Caribbean"
+choco$BroadBeanOrigin[choco$BroadBeanOrigin == "West Africa"] <- "Western Africa"
+```
+\newpage
+Looking at the values for the BeanType column, some of them contain sub-varieties. For example, For the value “Criollo (Porcelana)”, the “(Porcelana)” is the sub-variety in this value. Basically, the sub-varieties are the names with parentheses. We will simply remove these sub-varieties since we are only going to focus on the main varieties of the cacao plant, which are forastero, criollo, trinitario, and nacional. 
+
+```{r echo=FALSE}
+# Displaying a list of unique values for the column BeanType.
+uniqueBeanType <- unique(choco$BeanType) %>%
+  sort()
+
+uniqueBeanType
+```
+We will also add another main variety called “Blend” because there are values with more than one main variety. For example, “Trinitario, Nacional”, “Blend-Forastero, Criollo”, “Trinitario (85% Criollo)”, etc. 
+
+```{r echo=TRUE}
+# Grouping the values from the BeanType column by main bean variety.
+forastero <- c("Forastero",
+                     "Forastero (Amelonado)",
+                     "Forastero (Arriba)",
+                     "Forastero (Arriba) ASS",
+                     "Forastero (Arriba) ASSS",
+                     "Forastero (Catongo)",
+                     "Forastero (Parazinho)")
+
+criollo <- c("Criollo",
+             "Criollo (Amarru)",
+             "Criollo (Ocumare)",
+             "Criollo (Ocumare 61)",
+             "Criollo (Ocumare 67)",
+             "Criollo (Ocumare 77)",
+             "Criollo (Porcelana)",
+             "Criollo (Wild)")
+
+trinitario <- c("Trinitario",
+                "Trinitario (Amelonado)",
+                "Trinitario (Scavina)")
+
+nacional <- c("Forastero (Nacional)",
+                    "Nacional",
+                    "Nacional (Arriba)")
+
+blend <- c("Amazon",
+                 "Amazon mix",
+                 "Amazon, ICS",
+                 "Blend",
+                 "Blend-Forastero,Criollo",
+                 "Criollo, +",
+                 "Criollo, Forastero",
+                 "Criollo, Trinitario",
+                 "Forastero, Trinitario",
+                 "Forastero(Arriba, CCN)",
+                 "Trinitario (85% Criollo)",
+                 "Trinitario, Criollo",
+                 "Trinitario, Forastero",
+                 "Trinitario, Nacional",
+                 "Trinitario, TCGA",
+                 "Beniano",
+                 "CCN51",
+                 "EET",
+                 "Matina")
+
+choco$BeanType[which(choco$BeanType %in% forastero)] <- "Forastero"
+choco$BeanType[which(choco$BeanType %in% criollo)] <- "Criollo"
+choco$BeanType[which(choco$BeanType %in% trinitario)] <- "Trinitario"
+choco$BeanType[which(choco$BeanType %in% nacional)] <- "Nacional"
+choco$BeanType[which(choco$BeanType %in% blend)] <- "Blend"
+```
+
+Additionally, we will insert the value “Blend” into rows that have missing values in the BeanType column only if: there is more than one country in the BroadBeanOrigin column, or the name of the chocolate bar contains “Blend”, “blend” or “,”.
+
+```{r echo=TRUE}
+# Inserting the value "Blend" into rows that have n/a values
+# in the BeanType column only if
+#     - More than one country in the BroadBeanOrigin column
+#     - Name of the chocolate bar contains "Blend", "blend" or ",".
+choco$BeanType[is.na(choco$BeanType) & str_detect(choco$BroadBeanOrigin, "\\|")] <- "Blend"
+choco$BeanType[is.na(choco$BeanType) & str_detect(choco$ChocoName, "blend")] <- "Blend"
+choco$BeanType[is.na(choco$BeanType) & str_detect(choco$ChocoName, "Blend")] <- "Blend"
+choco$BeanType[is.na(choco$BeanType) & str_detect(choco$ChocoName, "\\,")] <- "Blend"
+```
+
+We will create a new variable called RatingClass, as it will be used in the visualization section.
+
+```{r echo=TRUE}
+# Creating a new variable called RatingClass, as it will be used in the visualization section.
+choco <- choco %>%
+  mutate(RatingClass = case_when(Rating >= 1.00 & Rating <= 1.75  ~ "1-Unpleasant",
+                                 Rating >= 2.00 & Rating <= 2.75  ~ "2-Disappointing",
+                                 Rating >= 3.00 & Rating <= 3.75  ~ "3-Satisfactory",
+                                 Rating >= 4.00 & Rating <= 4.75  ~ "4-Premium",
+                                 Rating > 4.75  ~ "5-Elite"))
+```
+\newpage
+Looking back at the values from the BroadBeanOrigin column, we used the “|” as the delimiter for the rows with multiple bean origin values. We will now separate the values and place each one in its own row to have a more consistent estimate. 
+
+```{r echo=TRUE}
+# Separating multiple bean origin values using the separate_rows function.
+choco <- choco %>%
+  separate_rows(BroadBeanOrigin,
+                sep = "\\|",
+                convert = FALSE)
+```
+
+Taking a look at the values from the CocoaPercent column, all of them have a percent sign. It will be difficult to calculate numeric values with strings so we will remove the percent signs and convert the column to numeric type. Also, the percentages will be rounded to the nearest integer. 
+
+```{r echo=TRUE}
+# Removing the percent (%) sign from the CocoaPercent column
+# and converting the column to numeric type.
+# Percentages will be rounded to the nearest integer.
+choco$CocoaPercent <- as.numeric(sub("%", "", choco$CocoaPercent, fixed = TRUE))
+choco$CocoaPercent <- round(choco$CocoaPercent, digits = 0)
+```
+
+The Rating column will be converted to numeric type, and the rest of the columns will be converted to factor type. 
+
+```{r echo=TRUE}
+# Converting the Rating column to numeric type.
+choco$Rating <- as.numeric(choco$Rating)
+
+# Converting the rest of the columns to factor type.
+choco$CompanyMaker <- as.factor(choco$CompanyMaker)
+choco$CompanyLocation <- as.factor(choco$CompanyLocation)
+choco$BeanType <- as.factor(choco$BeanType)
+choco$BroadBeanOrigin <- as.factor(choco$BroadBeanOrigin)
+choco$ReviewDate <- as.factor(choco$ReviewDate)
+choco$RatingClass <- as.factor(choco$RatingClass)
+```
+
+After cleaning the data, let’s look at our improved dataset.
+
+```{r echo=FALSE}
+# Looking at the dataset after the cleaning process.
+head(choco) %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position","scale_down"))
+```
+\newpage
+## 2.3 Data Visualization
+
+The table shows that the company, Amedei, produces the highest average rating of chocolate bars with 3.85. It is then followed by Idilio (felchlin) with an average rating of 3.78. Companies that have at least 10 ratings are only included in the table.
+
+```{r echo=FALSE}
+# Top 5 companies with highest average rating (at least 10 ratings).
+
+choco %>%
+  group_by(CompanyMaker) %>%
+  summarize(NumRating = n(),
+            AvgRating = mean(Rating)) %>%
+  filter(NumRating >= 10) %>%
+  arrange(desc(AvgRating)) %>%
+  head(5) %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position","scale_down"))
+```
+
+The graph below shows that companies from Vietnam, Canada, Brazil, and Australia tend to produce the highest average rating of chocolate bars with 3.40. Locations that have appeared at least 10 times in the data are only included in the graph. 
+
+```{r echo=FALSE}
+# Average rating of company locations (location must appear at least 10 times).
+
+choco %>%
+  group_by(CompanyLocation) %>% 
+  filter(n() > 10) %>% 
+  mutate(AvgRating = mean(Rating)) %>%
+  ggplot() + 
+  geom_boxplot(aes(reorder(CompanyLocation, AvgRating), Rating, fill = AvgRating)) + 
+  scale_fill_continuous(low = '#ffffcc', high = '#fc4e2a', name = "Avg Rating") + 
+  coord_flip() + 
+  ggtitle("Average Rating of Company Locations (n > 10)") +
+  xlab("Company Location") + ylab("Average Rating") +
+  expand_limits(y = c(0,5))
+```
+\newpage
+The graph below shows that there isn’t a strong relationship between cocoa percentage and chocolate bar rating. However looking at the red line that was created from the geom_smooth function, it appears that as the percentage of cocoa increases, the rating of chocolate decreases.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height = 10, fig.width = 10}
+choco %>%
+  ggplot(aes(x = CocoaPercent, y = Rating)) +
+  geom_jitter(alpha = .75) + 
+  coord_cartesian(ylim = c(0,5)) +
+  ggtitle("Cocoa Percentage vs. Chocolate Bar Rating") +
+  xlab("Cocoa Percentage") + ylab("Rating") +
+  geom_smooth(method = 'lm', se = FALSE, col = 'red')
+```
+\newpage
+The graph below shows that Blend and Trinitario are the most common bean types in the data. Combining these two bean types, they account for almost all of the chocolate bars. However, it is worth noting that there are about 600 chocolate bars with no bean type values, so we don’t know if this graph is truly the representation of the data. 
+
+```{r echo=FALSE, fig.height = 10, fig.width = 10}
+# Frequency of bean types being used in the chocolate bars.
+choco %>%
+  filter(!is.na(BeanType)) %>%
+  group_by(BeanType) %>%
+  summarize(NumRating = n(),
+            AvgRating = mean(Rating)) %>%
+  ggplot(aes(x = reorder(BeanType, NumRating),
+             y = NumRating)) +
+  geom_bar(stat = "identity",
+           color = 'black',
+           fill = '#fc4e2a') +
+  ggtitle("Frequency of Bean Types Being Used in the Chocolate Bars") +
+  xlab("Bean Type") + ylab("Frequency")
+```
+\newpage
+The graph below shows that chocolate bars with cocoa beans that come from the Caribbean or Southeast Asia regions are rated higher on average, although not significantly higher than the rest. Origins that have appeared at least 10 times in the data are only included in the graph.
+
+```{r echo=FALSE, fig.height = 10, fig.width = 10}
+# Average rating of the broad bean origins of the chocolate bars (origin must appear at least 10 times).
+choco %>%
+  group_by(BroadBeanOrigin) %>% 
+  filter(n() > 10) %>% 
+  mutate(AvgRating = mean(Rating)) %>%
+  ggplot() + 
+  geom_boxplot(aes(reorder(BroadBeanOrigin, AvgRating), Rating, fill = AvgRating)) + 
+  scale_fill_continuous(low = '#ffffcc', high = '#fc4e2a', name = "Avg Rating") + 
+  coord_flip() + 
+  ggtitle("Average Rating of the Broad Bean Origins of the Chocolate Bars (n > 10)") +
+  xlab("Broad Bean Origins") + ylab("Average Rating")
+```
+\newpage
+The graph below shows that there is a trend of rising number of chocolate bar reviews until the year 2016 when it starts to decline. Also, there is less variation in the chocolate bar ratings in the recent years.
+
+```{r echo=FALSE, fig.height = 10, fig.width = 10}
+# How chocolate bars are rated annually (2006-2017).
+choco %>% 
+  group_by(ReviewDate, Rating) %>% 
+  summarise(
+    NumReviews = n(),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = Rating, y = NumReviews)) +
+  geom_bar(aes(fill = ReviewDate), stat = "identity") +
+  scale_fill_viridis(discrete = T) +
+  facet_wrap(~ReviewDate) +
+  ggtitle("How Chocolate Bars are Rated Annually (2006-2017)") +
+  xlab("Rating") + ylab("Number of Reviews")
+```
+\newpage
+The graph below shows that the most common rating class of chocolate bars in the data is Satisfactory. Also, premium and elite chocolate bars are very rare in the data. 
+
+```{r echo=FALSE}
+# Frequency of the chocolate bar rating class.
+choco %>%
+  ggplot(aes(RatingClass)) +
+  geom_bar(color = 'black',
+           fill = '#fc4e2a') +
+  coord_flip() +
+  ggtitle("Frequency of the Chocolate Bar Rating Class") +
+  xlab("Rating Class") + ylab("Frequency")
+
+```
+
+## 2.4 Modeling Approach
+
+We will now start developing different machine learning models to reach our objective, which is to obtain the model with the highest accuracy score after predicting the Chocolate Bar Rating Class. 
+
+The features or variables that we will use for our machine learning models to predict the RatingClass of the chocolate bars are:
+
++ CompanyLocation
+
++ CocoaPercent
+
++ BeanType
+
++ BroadBeanOrigin
+
++ ReviewDate
+
+
+These are the key steps to achieve the goal of the project:
+
+Step 1: Split the dataset into training and testing (validation) sets. The training set will make up about 80 percent of the data, while the testing set will make up about 20 percent of the data.
+
+Step 2: Define and develop the machine learning models.
+
+Step 3: Train the models by feeding them with training data.
+
+Step 4: Test the models by running their predictions in the testing (validation) set.
+
+Step 5: Compare the performance results of the models and determine the model with the highest accuracy score. This model will be considered the best at predicting the RatingClass of the chocolate bars. 
+
+These are the machine learning models that we will use:
+
++ Model 1: Support Vector Machine (SVM)
+
++ Model 2: K-Nearest Neighbors (KNN)
+
++ Model 3: Random Forest (RF)
+
+# 3. Results
+
+Before developing the machine learning models, we will select the features to feed into the models.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Selecting the features to use for the machine learning models and
+# Removing rows with NAs.
+choco_feat <- choco %>%
+  select(CompanyLocation,
+         CocoaPercent,
+         BeanType,
+         BroadBeanOrigin,
+         ReviewDate,
+         RatingClass) %>%
+  drop_na()
+```
+
+
+Let’s split the data into training and testing sets. The training set will make up about 80 percent of the data, while the testing set will make up about 20 percent of the data.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Splitting the data into training and testing sets.
+# The training set will make up about 80% of the data, while the testing set will make up about 20% of the data.
+
+set.seed(1111)
+train_index <- createDataPartition(y = choco_feat$RatingClass,
+                                      times = 1,
+                                      p = 0.8,
+                                      list = FALSE)
+
+# Creating the training set.
+train <- choco_feat[train_index, ]
+
+# Creating the testing set.
+test <- choco_feat[-train_index, ]
+```
+
+We will also modify the resampling method to "repeatedcv", which is a repeated K-fold cross-validation with 10 folds and 3 repetitions.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ctr <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+```
+
+## Model 1: Support Vector Machine (SVM)
+
+The goal of the Support Vector Machine algorithm is to identify a hyperplane that clearly separates the data points of different classes. The hyperplane that SVM is looking for is the one that has the highest margin between the two classes. The reason for this is that if a new data point appears, then it can be classified with more confidence. 
+
+We will apply the Support Vector Machine model to our dataset and test the accuracy of its predictions on the test set.
+
+Let’s train the SVM model on the training set and check the accuracy score of its predictions.	
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+###-1st Model: Support Vector Machine (SVM)-###
+set.seed(1111)
+
+# Training the SVM model on the train set.
+svm_fit <- train(RatingClass ~ .,
+                 data = train,
+                 trControl = ctr,
+                 method = "svmRadial")
+
+```
+
+The table shows the accuracy scores of the SVM model in different regularization parameter values (C). We will obtain the highest accuracy score to reference later. 
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the SVM model on the training set.
+svm_fit_results <- svm_fit$results
+
+svm_fit_results %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+
+# Obtaining the highest accuracy score on the training set.
+svm_fit_acc <- max(svm_fit$results["Accuracy"])
+```
+
+Let’s test the accuracy of the SVM’s predictions on the test set.
+
+```{r echo=TRUE}
+# Predicting the SVM model on the test set
+svm_pred <- predict(svm_fit,
+                           newdata = test)
+
+# Defining Confusion Matrix
+svm_cmatrix <- confusionMatrix(svm_pred, test$RatingClass)
+```
+
+As we can see, the accuracy score of the SVM model’s predictions on the testing set is about 72.4%.
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the SVM model on the test set.
+svm_pred_results <- svm_cmatrix$overall
+
+# Obtaining the accuracy score on the testing set.
+svm_pred_acc <- svm_pred_results["Accuracy"]
+
+# Creating a table to record the train and test accuracy scores for each model.
+svm_results <- tibble(ML_Model = "Support Vector Machine (SVM)",
+                      Train_Acc_Score = svm_fit_acc,
+                      Test_Acc_Score = svm_pred_acc)
+
+# Putting the model into a list to compare with later models.
+report <- svm_results
+
+report %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+```
+\newpage
+## Model 2: K-Nearest Neighbors (KNN)
+
+The K-Nearest Neighbor algorithm depends on the concepts of closeness and similarity. Basically, the algorithm tries to identify which class the unknown data point belongs to by looking at its nearest neighboring data points, as the name (K-Nearest Neighbor) suggests. KNN assumes that data with similar traits are near to each other.
+
+We will apply the K-Nearest Neighbors model to our dataset and test the accuracy of its predictions on the test set.
+
+Let’s train the KNN model on the training set and check the accuracy score of its predictions.
+
+```{r echo=TRUE}
+###-2nd Model: K-Nearest Neighbors (KNN)-###
+set.seed(1111)
+
+# Training the KNN model on the train set.
+knn_fit <- train(RatingClass ~ .,
+                 data = train,
+                 trControl = ctr,
+                 method = "knn")
+```
+
+The table shows the accuracy scores of the KNN model in different number of neighbors parameter values (k). We will obtain the highest accuracy score to reference later.
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the KNN model on the training set.
+knn_fit_results <- knn_fit$results
+
+knn_fit_results %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+
+# Obtaining the highest accuracy score on the training set.
+knn_fit_acc <- max(knn_fit$results["Accuracy"])
+```
+
+Let’s test the accuracy of the KNN’s predictions on the test set.
+
+```{r echo=TRUE}
+# Predicting the KNN model on the test set
+knn_pred <- predict(knn_fit,
+                    newdata = test)
+
+# Defining Confusion Matrix
+knn_cmatrix <- confusionMatrix(knn_pred, test$RatingClass)
+```
+
+As we can see, the accuracy score of the KNN model’s predictions on the testing set is about 67.9%.
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the KNN model on the test set.
+knn_pred_results <- knn_cmatrix$overall
+
+# Obtaining the accuracy score on the testing set.
+knn_pred_acc <- knn_pred_results["Accuracy"]
+
+# Creating a table to record the train and test accuracy scores for each model.
+knn_results <- tibble(ML_Model = "K-Nearest Neighbors (KNN)",
+                      Train_Acc_Score = knn_fit_acc,
+                      Test_Acc_Score = knn_pred_acc)
+
+# Putting the model into a list to compare with later models.
+report <- bind_rows(report,
+                    knn_results)
+
+report %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+```
+\newpage
+## Model 3: Random Forest (RF)
+
+The Random Forest algorithm is a classifier that combines multiple decision trees on various subsets of a dataset and obtains the average to improve the dataset’s predicted accuracy. The way the algorithm works is based on ensemble learning, which is a technique of uniting several classifiers to solve complex problems and improve the overall result. 
+
+We will apply the Random Forest model to our dataset and test the accuracy of its predictions on the test set.
+
+Let’s train the RF model on the training set and check the accuracy score of its predictions.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+###-3rd Model: Random Forest (RF)-###
+set.seed(1111)
+
+# Training the RF model on the train set.
+rf_fit <- train(RatingClass ~ .,
+                 data = train,
+                 trControl = ctr,
+                 method = "rf")
+```
+
+The table shows the accuracy scores of the RF model in different mtry parameter values. The mtry parameter is the number of variables randomly sampled at each tree. We will obtain the highest accuracy score to reference later.
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the RF model on the training set.
+rf_fit_results <- rf_fit$results
+
+rf_fit_results %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+
+# Obtaining the highest accuracy score on the training set.
+rf_fit_acc <- max(rf_fit$results["Accuracy"])
+```
+
+Let’s test the accuracy of the RF’s predictions on the test set.
+
+```{r echo=TRUE}
+# Predicting the RF model on the test set
+rf_pred <- predict(rf_fit,
+                    newdata = test)
+
+# Defining Confusion Matrix
+rf_cmatrix <- confusionMatrix(rf_pred, test$RatingClass)
+```
+
+As we can see, the accuracy score of the RF model’s predictions on the testing set is about 71.6%.
+
+```{r echo=FALSE}
+# Obtaining and displaying the performance results of the RF model on the test set.
+rf_pred_results <- rf_cmatrix$overall
+
+# Obtaining the accuracy score on the testing set.
+rf_pred_acc <- rf_pred_results["Accuracy"]
+
+# Creating a table to record the train and test accuracy scores for each model.
+rf_results <- tibble(ML_Model = "Random Forest (RF)",
+                      Train_Acc_Score = rf_fit_acc,
+                      Test_Acc_Score = rf_pred_acc)
+
+# Putting the model into a list to compare with later models.
+report <- bind_rows(report,
+                    rf_results)
+
+report %>%
+  kable() %>%
+  kable_styling(font_size = 11,
+                full_width = FALSE,
+                latex_options = c("hold_position", "scale_down"))
+```
+\newpage
+
+## Compare Results
+
+Just by looking at the accuracy values, it’s clear that the model with the highest accuracy score is Support Vector Machine with 72.4%. However, the SVM model’s score isn’t significantly higher from the model with the second highest accuracy score, which is Random Forest with 71.6%. Therefore, we will need to compare both models in terms of kappa statistics, accuracy, and confidence interval (95%) using a dot plot. 
+
+```{r echo=TRUE}
+# Comparing the results of the models.
+clearResults <- resamples(list(SVM = svm_fit,
+                                     KNN = knn_fit,
+                                     RF  = rf_fit
+))
+```
+
+Looking at the plot with the confidence interval set at 95%, it shows that Random Forest is the one that predicts the RatingClass of the chocolate bars most accurately. We will consider Random Forest the best machine learning model to predict the Chocolate Bar Rating Class.
+
+```{r echo=FALSE}
+# Using Dot Plot to compare the results of the models.
+dotplot(clearResults)
+```
+\newpage
+
+# 4. Conclusion
+
+In this project, we used the Chocolate Bar Ratings dataset to develop machine learning models that could accurately predict the Chocolate Bar Rating Class. The Random Forest model was the best out of all the models we tested considering it provided the highest percentage of accurate predictions at a 95% confidence interval as shown in the dot plot. 
+
+Not only did we build and test machine learning models, but we explored the dataset and created informative visualizations about the features of different chocolate bars such as cocoa percentage, bean type, broad bean origin, company location, and review date. These features were important, as we used them for our machine learning models to predict the Chocolate Bar Rating Class. 
+
+## 4.1 Potential Impact
+
+The potential impact this project brings may benefit chocolate makers. For example, one of the visualizations we created showed that as the cocoa percentage of a chocolate bar increases, the bar’s rating decreases. With this information, chocolate makers may limit the cocoa of their chocolates to a certain percentage so they can sell more of their chocolates. Another example that may benefit chocolate makers is when we created the visualization about bean origins. We learned that chocolate bars with cocoa beans that come from the Caribbean or Southeast Asia regions are rated higher on average. This may make chocolate makers consider buying only cocoa beans from the Caribbean or Southeast Asia regions to maximize their profit.
+
+## 4.2 Limitations
+
+Regarding limitations, I felt like I could have developed more machine learning models into my report, as they could probably produce even better results. However, there is a good chance that running more advanced models would overwhelm the memory of my computer and crash R.
+
+## 4.3 Future Work
+
+As for future work, we can definitely apply our machine learning approach to different recommendation or rating datasets like the Chocolate Bar Ratings dataset where there are user assessments on items such as products and services. 
