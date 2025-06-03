@@ -1,4 +1,4 @@
-# HarvardX-DataScience-ChooseYourOwnProject-FinalCapstone
+# HarvardX DataScience ChooseYourOwnProject FinalCapstone
 ### Chocolate Bar Rating Prediction – HarvardX Data Science Capstone
 - Cleans and explores the Chocolate Bar Ratings dataset (~1,700 bars), analyzing key features like cocoa content, bean type, and origin to understand expert review patterns.
 - Builds and tests three machine learning models (SVM, KNN, Random Forest) to predict chocolate bar rating classes, identifying Random Forest as the top performer with ~72% test accuracy.
